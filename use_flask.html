@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head> 
+	<!-- 主要用来包括必要的元数据和链接到 CSS 样式表文件。-->
+	<meta charset="utf-8">
+	<meta name="description" content="">
+	<meta name="author" content="">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+	<title>Potree Viewer</title>
+
+	<!--样式表一般放在HTML文件的<head>标签之内，它们会影响到网页中元素的显示和布局等样式。-->
+	<link rel="stylesheet" type="text/css" href="../build/potree/potree.css">  <!--potree.css 可能是一个名为Potree的点云渲染库的样式表。-->
+	<link rel="stylesheet" type="text/css" href="../libs/jquery-ui/jquery-ui.min.css"> 
+	<!--jquery-ui.min.css：这是jQuery UI库的样式表，用于为网页提供丰富的用户界面交互功能。
+	jQuery UI库的一个样式表。jQuery UI是一组开源的用户界面交互、特效、小部件以及主题，这些都是在jQuery的基础上构建的。
+	".min"后缀意味着这是一个经过压缩的文件，它删除了所有空格、缩进和注释，以减小文件的大小，加快浏览器的载入时间。虽然这使得文件难以阅读和编辑，但并不影响浏览器解析和使用。-->
+	<link rel="stylesheet" type="text/css" href="../libs/openlayers3/ol.css">  <!--ol.css：OpenLayers库的样式表，通常用于在地图上添加各种特性。-->
+	<link rel="stylesheet" type="text/css" href="../libs/spectrum/spectrum.css"> <!--spectrum.css：是一个名为Spectrum的颜色选择器插件的样式表。-->
+	<link rel="stylesheet" type="text/css" href="../libs/jstree/themes/mixed/style.css"> <!--style.css：可能是jstree库的样式，jstree是一个用于展示树形结构数据的插件。--></head>
+
+<body>  
+	<!--  这部分代码包括了创建 Point Cloud Viewer 所需的 HTML 结构和 JavaScript 脚本。
+	这些JavaScript文件通常包含网页的功能代码，可以让网页提供交互式的功能或者动态内容。-->
+	<script src="../libs/jquery/jquery-3.1.1.min.js"></script> <!--jquery-3.1.1.min.js：这是jQuery库，它是一个快速、简洁的JavaScript库，提供了HTML文档遍历、事件处理、动画和Ajax等功能-->
+	<script src="../libs/spectrum/spectrum.js"></script><!--spectrum.js：Spectrum是一个颜色选择器插件。-->
+	<script src="../libs/jquery-ui/jquery-ui.min.js"></script><!--jquery-ui.min.js：这是jQuery UI库，为网页提供丰富的用户界面交互功能。-->
+	<script src="../libs/other/BinaryHeap.js"></script><!--BinaryHeap.js：可能是一个数据结构库，提供二叉堆的功能。二叉堆主要用于实现优先队列和堆排序-->
+	<script src="../libs/tween/tween.min.js"></script><!--tween.min.js：Tween.js库提供JavaScript动画的功能。-->
+	<script src="../libs/d3/d3.js"></script><!--d3.js：D3.js是一个JavaScript库，用于创建数据驱动的文档，如复杂图表-->
+	<script src="../libs/proj4/proj4.js"></script><!--proj4.js：Proj4.js是一个用于地理坐标转换的JavaScript库。-->
+	<script src="../libs/openlayers3/ol.js"></script><!--ol.js：OpenLayers库，通常用于在地图上添加各种特性。-->
+	<script src="../libs/i18next/i18next.js"></script><!--i18next.js：i18next是一个通用的国际化框架。-->
+	<script src="../libs/jstree/jstree.js"></script><!--jstree.js：jstree是一个用于展示树形结构数据的插件。-->
+	
+	<!--index.js、potree.js、laslaz.js：可能与点云显示库Potree或类似库有关。-->
+	<script src="../libs/copc/index.js"></script>
+	<script src="../build/potree/potree.js"></script>
+	<script src="../libs/plasio/js/laslaz.js"></script> 
+
+	<!-- INCLUDE ADDITIONAL DEPENDENCIES HERE -->
+	<!-- INCLUDE SETTINGS HERE -->
+	<!---->
+	<div class="potree_container" style="position: absolute; width: 100%; height: 100%; left: 0px; top: 0px; ">
+		<div id="potree_render_area" style="background-image: url('../build/potree/resources/images/background.jpg');"></div>  
+		<!--定义id "potree_render_area" 用于potree显示的区域-->
+		<div id="potree_sidebar_container"> </div>
+	</div>
+	
+	<!--在 script 标签中加入 type="module" 属性时，浏览器会将其作为 ES6 模块来处理。这意味着在这段 script 中，你可以使用 import 和 export 等 ES6 模块的特性。-->
+	<script type="module">  
+
+	import * as THREE from "../libs/three.js/build/three.module.js";  //导入了一个叫THREE的库，这个库一般用来在浏览器中创建和显示3D模型。
+	//使用 import 语句来导入 three.module.js 文件提供的所有导出的内容，并将其放入一个名为 THREE 的模块对象中。
+	/*当创建和使用 Potree viewer 的过程中，会间接的使用到 THREE.js 提供的很多功能，例如创建 3D 场景、定义材质和光源、执行 WebGL 渲染等等。
+	总的来说，导入 THREE.js 和后面的创建 Potree viewer 之间的关系就是，THREE.js 提供了创建和操作 3D 对象的基础框架，然后 Potree 在这个框架上实现了点云的特定处理和渲染功能，
+	最终创建出一个可以用于在网页中查看和操作点云的 viewer 对象。*/
+		window.viewer = new Potree.Viewer(document.getElementById("potree_render_area"));//这行代码是用来初始化并配置 Potree viewer 
+		
+		viewer.setEDLEnabled(true); //EDL是一种在点云渲染中常见的着色技术，它可以增强点云的视觉深度感，使得点云具有更好的立体感和逼真感。
+		viewer.setFOV(60);
+		viewer.setPointBudget(1_000_000);
+		viewer.loadSettingsFromURL();
+
+		viewer.setDescription(" red-rocks ");
+		viewer.loadGUI(() => {
+			viewer.setLanguage('zh');
+			$("#menu_appearance").next().show();
+		});
+
+		//var path = false
+		var path = "../pointclouds/laoshanzhixian/ept.json" //entwine
+		//var path = "../pointclouds/red-rocks/ept.json"   // "../" 表示回到上级目录
+
+		var name = "autzen_pcid";
+
+		var getQueryParam = function(name) { //从 URL 查询参数中获取指定名称的参数值
+			name = name.replace(/[\[\]]/g, "\\$&");
+			var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+				results = regex.exec(window.location.href);
+			if (!results || !results[2]) return null;
+			return decodeURIComponent(results[2].replace(/\+/g, " "));
+		}
+
+        var r = getQueryParam('r'); //使用了之前定义的 getQueryParam 函数来获取 URL 查询参数中名为 'r' 的参数值。然后根据这个参数值的内容来确定变量 path 的值。
+        if (r) {              //var r = getQueryParam('r'); 试图获取URL中名为 'r' 的查询参数（如果存在）。
+			name = r;
+            var http = 'http';
+            if (r.substr(0, http.length) == http) path = name;
+            else path = "../pointclouds/" + name + "/ept.json";
+        }
+      
+		Potree.loadPointCloud(path, name, function(e){
+			viewer.scene.addPointCloud(e.pointcloud);
+
+			let material = e.pointcloud.material;
+			material.size = 1;
+			//material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
+
+			material.pointShape = Potree.PointShape.CIRCLE;
+
+			viewer.fitToScreen(0.5);
+		});
+	</script>
+  </body>
+</html>
+
